@@ -1,95 +1,109 @@
-
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Arçelik Ekran Konfigüratörü</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arçelik LED Konfigüratör</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-    h1 { color: #e30613; }
-    label { display: block; margin-top: 15px; font-weight: bold; }
-    select, input[type=number], button {
-      padding: 8px;
-      width: 300px;
-      margin-top: 5px;
+    body { font-family: sans-serif; padding: 2rem; background: #f8f9fa; }
+    h2 { color: #c8102e; }
+    .step { margin-bottom: 2rem; }
+    select, input[type="number"] {
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      width: 100%;
     }
-    .results { margin-top: 30px; padding: 15px; background: #fff; border-radius: 8px; border: 1px solid #ccc; }
-    .pdf-link { margin-top: 10px; display: inline-block; }
+    .result {
+      background: white;
+      border: 1px solid #ddd;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    button {
+      background: #c8102e;
+      color: white;
+      padding: 0.7rem 1.5rem;
+      border: none;
+      font-size: 1rem;
+      margin-top: 1rem;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h1>Arçelik Ekran Konfigüratörü</h1>
+  <h2>Arçelik LED Konfigüratör</h2>
 
-  <label for="model">1. Ekran Modeli Seçin:</label>
-  <select id="model">
-    <option value="">-- Seçin --</option>
-    <option value="IE025A">IE025A</option>
-    <option value="IC025D">IC025D (4K)</option>
-  </select>
-
-  <label for="qtyH">2. Yatay Adet:</label>
-  <input type="number" id="qtyH" min="1" value="1" />
-
-  <label for="qtyV">3. Dikey Adet:</label>
-  <input type="number" id="qtyV" min="1" value="1" />
-
-  <button onclick="calculate()">HESAPLA</button>
-
-  <div class="results" id="output">
-    Henüz bir hesaplama yapılmadı.
+  <div class="step">
+    <label for="usageArea">Kullanım Alanı:</label>
+    <select id="usageArea">
+      <option>Indoor LED</option>
+      <option>Outdoor LED</option>
+      <option>Video Wall</option>
+    </select>
   </div>
 
-<script>
-const screens = {
-  IE025A: {
-    width: 960, height: 540, resX: 192, resY: 108, pdf: "https://example.com/ie025a.pdf"
-  },
-  IC025D: {
-    width: 640, height: 900, resX: 256, resY: 144, pdf: "https://example.com/ic025d.pdf"
-  }
-};
+  <div class="step">
+    <label for="pixelPitch">Pixel Boyutu:</label>
+    <select id="pixelPitch">
+      <option>1.26 mm</option>
+      <option>1.56 mm</option>
+      <option>1.68 mm</option>
+    </select>
+  </div>
 
-const controllers = [
-  { model: "Novastar C1", maxX: 3840, maxY: 2160, pdf: "https://example.com/c1.pdf", price: 10000 },
-  { model: "VX1000", maxX: 7680, maxY: 4320, pdf: "https://example.com/vx1000.pdf", price: 25000 },
-  { model: "Z6", maxX: 1920, maxY: 1080, pdf: "https://example.com/z6.pdf", price: 7000 }
-];
+  <div class="step">
+    <label for="brightness">Parlaklık:</label>
+    <select id="brightness">
+      <option>500 nit</option>
+      <option>600 nit</option>
+      <option>1000 nit</option>
+      <option>1800 nit</option>
+    </select>
+  </div>
 
-function calculate() {
-  const model = document.getElementById("model").value;
-  const qtyH = parseInt(document.getElementById("qtyH").value);
-  const qtyV = parseInt(document.getElementById("qtyV").value);
-  const screen = screens[model];
+  <div class="step">
+    <label>İstenen Alan Ölçüleri (mm):</label>
+    <input type="number" id="wallWidth" placeholder="Genişlik (mm)" />
+    <input type="number" id="wallHeight" placeholder="Yükseklik (mm)" />
+  </div>
 
-  if (!model || !qtyH || !qtyV) {
-    document.getElementById("output").innerHTML = "<p>Lütfen tüm alanları doldurun.</p>";
-    return;
-  }
+  <button onclick="calculateFit()">Hesapla</button>
 
-  const totalW = qtyH * screen.width;
-  const totalH = qtyV * screen.height;
-  const totalResX = qtyH * screen.resX;
-  const totalResY = qtyV * screen.resY;
+  <div class="result" id="resultBox"></div>
 
-  const matchedControllers = controllers.filter(c => c.maxX >= totalResX && c.maxY >= totalResY);
+  <script>
+    const productDB = [
+      { model: "MP012F", pitch: "1.26 mm", brightness: "1000 nit", width: 806.4, height: 453.6 },
+      { model: "MM015F", pitch: "1.56 mm", brightness: "600 nit", width: 600, height: 337.5 },
+      { model: "MP016F", pitch: "1.68 mm", brightness: "1200 nit", width: 806.4, height: 453.6 },
+      { model: "MMF 136''", pitch: "1.56 mm", brightness: "500 nit", width: 3008.7, height: 1695.8 }
+    ];
 
-  let html = `<h3>Toplam Boyut: ${totalW}mm x ${totalH}mm</h3>`;
-  html += `<p>Toplam Çözünürlük: ${totalResX} x ${totalResY} px</p>`;
-  html += `<p><strong>Seçilen Ekran PDF:</strong> <a class="pdf-link" href="${screen.pdf}" target="_blank">PDF Aç</a></p>`;
+    function calculateFit() {
+      const pitch = document.getElementById("pixelPitch").value;
+      const brightness = document.getElementById("brightness").value;
+      const w = parseFloat(document.getElementById("wallWidth").value);
+      const h = parseFloat(document.getElementById("wallHeight").value);
 
-  if (matchedControllers.length > 0) {
-    html += "<h3>Uygun Controller'lar:</h3><ul>";
-    matchedControllers.forEach(c => {
-      html += `<li>${c.model} — Max: ${c.maxX}x${c.maxY} — <strong>₺${c.price}</strong> — <a href="${c.pdf}" target="_blank">PDF</a></li>`;
-    });
-    html += "</ul>";
-  } else {
-    html += "<p style='color: red;'>Uygun controller bulunamadı!</p>";
-  }
+      const filtered = productDB.filter(p => p.pitch === pitch && p.brightness.includes(brightness));
+      let html = "<h3>Uygun Modeller:</h3>";
 
-  document.getElementById("output").innerHTML = html;
-}
-</script>
+      if (filtered.length === 0) {
+        html += "<p>Uygun model bulunamadı.</p>";
+      } else {
+        html += "<ul>";
+        filtered.forEach(p => {
+          const horiz = Math.floor(w / p.width);
+          const vert = Math.floor(h / p.height);
+          const total = horiz * vert;
+          html += `<li>${p.model} (${horiz}x${vert} = ${total} panel)</li>`;
+        });
+        html += "</ul>";
+      }
+
+      document.getElementById("resultBox").innerHTML = html;
+    }
+  </script>
 </body>
 </html>
