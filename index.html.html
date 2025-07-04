@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Arçelik Ekran Konfigüratörü</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h1 { color: #e30613; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    select, input[type=number], button {
+      padding: 8px;
+      width: 300px;
+      margin-top: 5px;
+    }
+    .results { margin-top: 30px; padding: 15px; background: #fff; border-radius: 8px; border: 1px solid #ccc; }
+    .pdf-link { margin-top: 10px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <h1>Arçelik Ekran Konfigüratörü</h1>
+
+  <label for="model">1. Ekran Modeli Seçin:</label>
+  <select id="model">
+    <option value="">-- Seçin --</option>
+    <option value="IE025A">IE025A</option>
+    <option value="IC025D">IC025D (4K)</option>
+  </select>
+
+  <label for="qtyH">2. Yatay Adet:</label>
+  <input type="number" id="qtyH" min="1" value="1" />
+
+  <label for="qtyV">3. Dikey Adet:</label>
+  <input type="number" id="qtyV" min="1" value="1" />
+
+  <button onclick="calculate()">HESAPLA</button>
+
+  <div class="results" id="output">
+    Henüz bir hesaplama yapılmadı.
+  </div>
+
+<script>
+const screens = {
+  IE025A: {
+    width: 960, height: 540, resX: 192, resY: 108, pdf: "https://example.com/ie025a.pdf"
+  },
+  IC025D: {
+    width: 640, height: 900, resX: 256, resY: 144, pdf: "https://example.com/ic025d.pdf"
+  }
+};
+
+const controllers = [
+  { model: "Novastar C1", maxX: 3840, maxY: 2160, pdf: "https://example.com/c1.pdf", price: 10000 },
+  { model: "VX1000", maxX: 7680, maxY: 4320, pdf: "https://example.com/vx1000.pdf", price: 25000 },
+  { model: "Z6", maxX: 1920, maxY: 1080, pdf: "https://example.com/z6.pdf", price: 7000 }
+];
+
+function calculate() {
+  const model = document.getElementById("model").value;
+  const qtyH = parseInt(document.getElementById("qtyH").value);
+  const qtyV = parseInt(document.getElementById("qtyV").value);
+  const screen = screens[model];
+
+  if (!model || !qtyH || !qtyV) {
+    document.getElementById("output").innerHTML = "<p>Lütfen tüm alanları doldurun.</p>";
+    return;
+  }
+
+  const totalW = qtyH * screen.width;
+  const totalH = qtyV * screen.height;
+  const totalResX = qtyH * screen.resX;
+  const totalResY = qtyV * screen.resY;
+
+  const matchedControllers = controllers.filter(c => c.maxX >= totalResX && c.maxY >= totalResY);
+
+  let html = `<h3>Toplam Boyut: ${totalW}mm x ${totalH}mm</h3>`;
+  html += `<p>Toplam Çözünürlük: ${totalResX} x ${totalResY} px</p>`;
+  html += `<p><strong>Seçilen Ekran PDF:</strong> <a class="pdf-link" href="${screen.pdf}" target="_blank">PDF Aç</a></p>`;
+
+  if (matchedControllers.length > 0) {
+    html += "<h3>Uygun Controller'lar:</h3><ul>";
+    matchedControllers.forEach(c => {
+      html += `<li>${c.model} — Max: ${c.maxX}x${c.maxY} — <strong>₺${c.price}</strong> — <a href="${c.pdf}" target="_blank">PDF</a></li>`;
+    });
+    html += "</ul>";
+  } else {
+    html += "<p style='color: red;'>Uygun controller bulunamadı!</p>";
+  }
+
+  document.getElementById("output").innerHTML = html;
+}
+</script>
+</body>
+</html>
