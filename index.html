@@ -63,9 +63,10 @@
   </div>
 
   <div class="step">
-    <label>İstenen Alan Ölçüleri (mm):</label>
-    <input type="number" id="wallWidth" placeholder="Genişlik (mm)" />
-    <input type="number" id="wallHeight" placeholder="Yükseklik (mm)" />
+    <label>İstenen Alan Ölçüleri (cm):</label>
+    <input type="number" id="wallWidth" placeholder="Genişlik (cm)" />
+    <input type="number" id="wallHeight" placeholder="Yükseklik (cm)" />
+    <input type="number" id="maxDepth" placeholder="Maksimum Derinlik (cm)" />
   </div>
 
   <button onclick="calculateFit()">Hesapla</button>
@@ -74,10 +75,10 @@
 
   <script>
     const productDB = [
-      { model: "MP012F", pitch: "1.26 mm", brightness: "1000 nit", width: 806.4, height: 453.6 },
-      { model: "MM015F", pitch: "1.56 mm", brightness: "600 nit", width: 600, height: 337.5 },
-      { model: "MP016F", pitch: "1.68 mm", brightness: "1200 nit", width: 806.4, height: 453.6 },
-      { model: "MMF 136''", pitch: "1.56 mm", brightness: "500 nit", width: 3008.7, height: 1695.8 }
+      { model: "MP012F", pitch: "1.26 mm", brightness: "1000 nit", width: 80.64, height: 45.36, depth: 4.9 },
+      { model: "MM015F", pitch: "1.56 mm", brightness: "600 nit", width: 60.0, height: 33.75, depth: 5.0 },
+      { model: "MP016F", pitch: "1.68 mm", brightness: "1200 nit", width: 80.64, height: 45.36, depth: 5.0 },
+      { model: "MMF 136''", pitch: "1.56 mm", brightness: "500 nit", width: 300.87, height: 169.58, depth: 6.0 }
     ];
 
     function calculateFit() {
@@ -85,8 +86,14 @@
       const brightness = document.getElementById("brightness").value;
       const w = parseFloat(document.getElementById("wallWidth").value);
       const h = parseFloat(document.getElementById("wallHeight").value);
+      const maxDepth = parseFloat(document.getElementById("maxDepth").value);
 
-      const filtered = productDB.filter(p => p.pitch === pitch && p.brightness.includes(brightness));
+      const filtered = productDB.filter(p => 
+        p.pitch === pitch && 
+        p.brightness.includes(brightness) && 
+        (!maxDepth || p.depth <= maxDepth)
+      );
+
       let html = "<h3>Uygun Modeller:</h3>";
 
       if (filtered.length === 0) {
@@ -97,7 +104,9 @@
           const horiz = Math.floor(w / p.width);
           const vert = Math.floor(h / p.height);
           const total = horiz * vert;
-          html += `<li>${p.model} (${horiz}x${vert} = ${total} panel)</li>`;
+          if (horiz >= 1 && vert >= 1 && total >= 1) {
+            html += `<li><strong>${p.model}</strong>: ${horiz} x ${vert} = ${total} panel | Derinlik: ${p.depth} cm</li>`;
+          }
         });
         html += "</ul>";
       }
