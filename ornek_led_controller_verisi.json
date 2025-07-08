@@ -1,0 +1,42 @@
+[
+  {
+    "Model": "A",
+    "Pixel Pitch": "1.2 mm",
+    "Brightness": "1000 nit",
+    "Width (cm)": 300,
+    "Height (cm)": 300,
+    "Depth (cm)": 5.0,
+    "Usage Area": "Indoor",
+    "Controller": "T3"
+  },
+  {
+    "Model": "B",
+    "Pixel Pitch": "1.5 mm",
+    "Brightness": "800 nit",
+    "Width (cm)": 200,
+    "Height (cm)": 200,
+    "Depth (cm)": 4.5,
+    "Usage Area": "Indoor",
+    "Controller": "T3"
+  },
+  {
+    "Model": "C",
+    "Pixel Pitch": "2.0 mm",
+    "Brightness": "1800 nit",
+    "Width (cm)": 100,
+    "Height (cm)": 50,
+    "Depth (cm)": 4.5,
+    "Usage Area": "Outdoor",
+    "Controller": "T4"
+  },
+  {
+    "Model": "D",
+    "Pixel Pitch": "1.5 mm",
+    "Brightness": "1200 nit",
+    "Width (cm)": 150,
+    "Height (cm)": 150,
+    "Depth (cm)": 5.5,
+    "Usage Area": "Video Wall",
+    "Controller": "T4"
+  }
+]
