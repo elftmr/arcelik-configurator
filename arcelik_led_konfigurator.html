@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Arçelik LED Konfigüratör</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background: #f0f0f0; }
+    h2 { color: #c8102e; }
+    .step { margin-bottom: 1.5rem; }
+    select, input[type="number"] {
+      padding: 0.5rem;
+      width: 100%;
+      margin-top: 0.3rem;
+    }
+    .result {
+      background: white;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      margin-top: 2rem;
+    }
+    button {
+      background-color: #c8102e;
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>Arçelik LED Konfigüratör</h2>
+
+  <div class="step">
+    <label>Kullanım Alanı:</label>
+    <select id="usageArea"></select>
+  </div>
+
+  <div class="step">
+    <label>Pixel Boyutu:</label>
+    <select id="pixelPitch"></select>
+  </div>
+
+  <div class="step">
+    <label>Parlaklık:</label>
+    <select id="brightness"></select>
+  </div>
+
+  <div class="step">
+    <label>Alan Ölçüsü (cm):</label>
+    <input type="number" id="wallWidth" placeholder="Genişlik (cm)">
+    <input type="number" id="wallHeight" placeholder="Yükseklik (cm)">
+    <input type="number" id="maxDepth" placeholder="Maksimum Derinlik (cm)">
+  </div>
+
+  <button onclick="calculate()">Hesapla</button>
+
+  <div class="result" id="resultBox"></div>
+
+  <script>
+    let data = [];
+    let filteredData = [];
+
+    fetch('ornek_led_controller_verisi.json')
+      .then(res => res.json())
+      .then(json => {
+        data = json;
+        initDropdowns();
+      });
+
+    function initDropdowns() {
+      const usageAreas = [...new Set(data.map(d => d["Usage Area"]))];
+      const usageSelect = document.getElementById("usageArea");
+      usageAreas.forEach(val => usageSelect.innerHTML += `<option value="${val}">${val}</option>`);
+      usageSelect.addEventListener("change", updatePitchDropdown);
+      updatePitchDropdown();
+    }
+
+    function updatePitchDropdown() {
+      const selectedUsage = document.getElementById("usageArea").value;
+      const pitches = [...new Set(data.filter(d => d["Usage Area"] === selectedUsage).map(d => d["Pixel Pitch"]))];
+      const pitchSelect = document.getElementById("pixelPitch");
+      pitchSelect.innerHTML = "";
+      pitches.forEach(val => pitchSelect.innerHTML += `<option value="${val}">${val}</option>`);
+      pitchSelect.addEventListener("change", updateBrightnessDropdown);
+      updateBrightnessDropdown();
+    }
+
+    function updateBrightnessDropdown() {
+      const selectedUsage = document.getElementById("usageArea").value;
+      const selectedPitch = document.getElementById("pixelPitch").value;
+      const brightness = [...new Set(data.filter(d => d["Usage Area"] === selectedUsage && d["Pixel Pitch"] === selectedPitch).map(d => d["Brightness"]))];
+      const brightSelect = document.getElementById("brightness");
+      brightSelect.innerHTML = "";
+      brightness.forEach(val => brightSelect.innerHTML += `<option value="${val}">${val}</option>`);
+    }
+
+    function calculate() {
+      const usage = document.getElementById("usageArea").value;
+      const pitch = document.getElementById("pixelPitch").value;
+      const bright = document.getElementById("brightness").value;
+      const w = parseFloat(document.getElementById("wallWidth").value);
+      const h = parseFloat(document.getElementById("wallHeight").value);
+      const maxDepth = parseFloat(document.getElementById("maxDepth").value);
+
+      const filtered = data.filter(d =>
+        d["Usage Area"] === usage &&
+        d["Pixel Pitch"] === pitch &&
+        d["Brightness"] === bright &&
+        (!maxDepth || d["Depth (cm)"] <= maxDepth)
+      );
+
+      let resultHTML = "<h3>Önerilen Modeller:</h3>";
+
+      if (filtered.length === 0) {
+        resultHTML += "<p>Uygun model bulunamadı.</p>";
+      } else {
+        resultHTML += "<ul>";
+        filtered.forEach(d => {
+          const horiz = Math.floor(w / d["Width (cm)"]);
+          const vert = Math.floor(h / d["Height (cm)"]);
+          const total = horiz * vert;
+          if (total > 0) {
+            resultHTML += `<li><strong>${d.Model}</strong> – ${horiz}x${vert} panel = ${total} adet – Derinlik: ${d["Depth (cm)"]} cm – Controller: ${d.Controller}</li>`;
+          }
+        });
+        resultHTML += "</ul>";
+      }
+
+      document.getElementById("resultBox").innerHTML = resultHTML;
+    }
+  </script>
+</body>
+</html>
