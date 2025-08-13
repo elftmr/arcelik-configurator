@@ -1,134 +1,338 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
   <title>Arçelik LED Konfigüratör</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: sans-serif; padding: 2rem; background: #f0f0f0; }
-    h2 { color: #c8102e; }
-    .step { margin-bottom: 1.5rem; }
-    select, input[type="number"] {
-      padding: 0.5rem;
-      width: 100%;
-      margin-top: 0.3rem;
-    }
-    .result {
-      background: white;
-      padding: 1rem;
-      border: 1px solid #ccc;
-      margin-top: 2rem;
-    }
-    button {
-      background-color: #c8102e;
-      color: white;
-      padding: 0.6rem 1.2rem;
-      border: none;
-      cursor: pointer;
-    }
+    :root{ --pri:#c8102e; --bg:#f4f4f5; --card:#fff; --muted:#6b7280; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:#111; }
+    header{ padding:24px 20px; }
+    h1{ margin:0; color:var(--pri); font-size:28px; }
+    main{ display:grid; gap:16px; grid-template-columns:1.2fr 1fr; padding:0 20px 24px; }
+    @media (max-width: 980px){ main{ grid-template-columns:1fr; } }
+    .card{ background:var(--card); border:1px solid #e5e7eb; border-radius:12px; padding:16px; }
+    .row{ display:grid; gap:12px; grid-template-columns:1fr 1fr; }
+    .row-3{ display:grid; gap:12px; grid-template-columns:repeat(3,1fr); }
+    label{ font-size:13px; color:#374151; display:block; margin-bottom:6px; }
+    select,input{ width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; }
+    button{ background:var(--pri); color:#fff; border:none; border-radius:10px; padding:12px 16px; cursor:pointer; font-weight:600; }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
+    .actions{ display:flex; gap:10px; justify-content:flex-end; }
+    table{ width:100%; border-collapse:collapse; font-size:14px; }
+    th,td{ border-bottom:1px solid #e5e7eb; padding:8px 10px; text-align:left; }
+    th{ background:#fafafa; }
+    .muted{ color:var(--muted); font-size:12px; }
+    canvas{ width:100%; height:380px; border:1px dashed #d1d5db; border-radius:10px; background:#fff; }
+    .stat{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; font-size:13px; }
+    .pill{ display:inline-block; background:#111; color:#fff; border-radius:999px; padding:2px 8px; font-size:12px; }
+    .grid-legend{ display:flex; gap:10px; align-items:center; margin-top:8px; font-size:12px; color:#374151; }
+    .sw{ width:16px; height:10px; border:1px solid #111; background:#e5e7eb; display:inline-block; }
+    .warn{ color:#b45309; background:#fffbeb; border:1px solid #fcd34d; padding:8px 10px; border-radius:8px; font-size:13px; }
   </style>
 </head>
 <body>
-  <h2>Arçelik LED Konfigüratör</h2>
+<header>
+  <h1>Arçelik LED Konfigüratör</h1>
+</header>
 
-  <div class="step">
-    <label>Kullanım Alanı:</label>
-    <select id="usageArea"></select>
-  </div>
+<main>
+  <!-- SOL: Form -->
+  <section class="card">
+    <div class="row">
+      <div>
+        <label>Kullanım Alanı</label>
+        <select id="usageArea"></select>
+      </div>
+      <div>
+        <label>Pixel Boyutu</label>
+        <select id="pixelPitch"></select>
+      </div>
+    </div>
 
-  <div class="step">
-    <label>Pixel Boyutu:</label>
-    <select id="pixelPitch"></select>
-  </div>
+    <div class="row" style="margin-top:12px;">
+      <div>
+        <label>Parlaklık (nit)</label>
+        <select id="brightness"></select>
+      </div>
+      <div>
+        <label>Maksimum Derinlik (cm) <span class="muted">(opsiyonel)</span></label>
+        <input type="number" id="maxDepth" placeholder="Örn: 12">
+      </div>
+    </div>
 
-  <div class="step">
-    <label>Parlaklık:</label>
-    <select id="brightness"></select>
-  </div>
+    <div class="row-3" style="margin-top:12px;">
+      <div>
+        <label>Genişlik (cm)</label>
+        <input type="number" id="wallWidth" placeholder="Örn: 400">
+      </div>
+      <div>
+        <label>Yükseklik (cm)</label>
+        <input type="number" id="wallHeight" placeholder="Örn: 250">
+      </div>
+      <div>
+        <label>Çerçeve Boşluğu (cm) <span class="muted">(ops.)</span></label>
+        <input type="number" id="bezel" placeholder="Örn: 0">
+      </div>
+    </div>
 
-  <div class="step">
-    <label>Alan Ölçüsü (cm):</label>
-    <input type="number" id="wallWidth" placeholder="Genişlik (cm)">
-    <input type="number" id="wallHeight" placeholder="Yükseklik (cm)">
-    <input type="number" id="maxDepth" placeholder="Maksimum Derinlik (cm)">
-  </div>
+    <div class="actions" style="margin-top:14px;">
+      <button id="btnCalc">Hesapla</button>
+      <button id="btnReset" type="button" style="background:#374151">Temizle</button>
+    </div>
+  </section>
 
-  <button onclick="calculate()">Hesapla</button>
+  <!-- SAĞ: Önizleme -->
+  <section class="card">
+    <label>Önizleme</label>
+    <canvas id="preview" width="900" height="520"></canvas>
+    <div class="grid-legend">
+      <span class="sw"></span> Panel modülü (ölçekli çizim) ·
+      <span>Yaklaşık ölçek: <span class="pill" id="scaleInfo">—</span></span>
+    </div>
+    <div class="stat" id="stats"></div>
+  </section>
 
-  <div class="result" id="resultBox"></div>
+  <!-- ALT: Sonuç Tablosu -->
+  <section class="card" style="grid-column:1/-1;">
+    <label>Önerilen Modeller</label>
+    <div id="resultBox" class="muted">Hesapladıktan sonra sonuçlar burada görünecek.</div>
+  </section>
+</main>
 
-  <script>
-    let data = [];
-    let filteredData = [];
+<script>
+let data = [];
+let lastFiltered = [];
 
-    fetch('ornek_led_controller_verisi.json')
-      .then(res => res.json())
-      .then(json => {
-        data = json;
-        initDropdowns();
-      });
+const els = {
+  usage: document.getElementById('usageArea'),
+  pitch: document.getElementById('pixelPitch'),
+  bright: document.getElementById('brightness'),
+  maxDepth: document.getElementById('maxDepth'),
+  w: document.getElementById('wallWidth'),
+  h: document.getElementById('wallHeight'),
+  bezel: document.getElementById('bezel'),
+  btnCalc: document.getElementById('btnCalc'),
+  btnReset: document.getElementById('btnReset'),
+  box: document.getElementById('resultBox'),
+  canvas: document.getElementById('preview'),
+  stats: document.getElementById('stats'),
+  scaleInfo: document.getElementById('scaleInfo')
+};
 
-    function initDropdowns() {
-      const usageAreas = [...new Set(data.map(d => d["Usage Area"]))];
-      const usageSelect = document.getElementById("usageArea");
-      usageAreas.forEach(val => usageSelect.innerHTML += `<option value="${val}">${val}</option>`);
-      usageSelect.addEventListener("change", updatePitchDropdown);
-      updatePitchDropdown();
+// 1) Veriyi yükle
+fetch('ornek_led_controller_verisi.json')
+  .then(r => r.json())
+  .then(json => { data = json; initDropdowns(); })
+  .catch(() => {
+    data = []; // en azından boş çalışsın
+    els.box.innerHTML = '<div class="warn">Veri yüklenemedi. JSON dosyasını kontrol edin.</div>';
+  });
+
+// 2) Dropdown doldurma & zincir
+function initDropdowns(){
+  // Usage
+  const usages = uniq(data.map(d => d["Usage Area"])).sort();
+  fillOptions(els.usage, usages);
+
+  els.usage.addEventListener('change', updatePitch);
+  els.pitch.addEventListener('change', updateBright);
+  updatePitch(); // tetikle
+}
+
+function updatePitch(){
+  const selectedUsage = els.usage.value;
+  const pitches = uniq(
+    data.filter(d => d["Usage Area"] === selectedUsage).map(d => d["Pixel Pitch"])
+  ).sort(naturalSortPitch);
+  fillOptions(els.pitch, pitches);
+  updateBright();
+}
+
+function updateBright(){
+  const u = els.usage.value;
+  const p = els.pitch.value;
+  const brs = uniq(
+    data.filter(d => d["Usage Area"] === u && d["Pixel Pitch"] === p)
+        .map(d => d["Brightness"])
+  ).sort((a,b)=>Number(a)-Number(b));
+  fillOptions(els.bright, brs);
+}
+
+function fillOptions(selectEl, arr){
+  selectEl.innerHTML = arr.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+}
+
+function uniq(arr){ return [...new Set(arr)]; }
+function naturalSortPitch(a,b){
+  // "1.2 mm" -> 1.2 ; "2.5 mm" -> 2.5
+  const na = parseFloat(String(a).replace(',','.')); 
+  const nb = parseFloat(String(b).replace(',','.'));
+  return na - nb;
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+// 3) Hesaplama + Önizleme
+els.btnCalc.onclick = () => {
+  const usage = els.usage.value;
+  const pitch = els.pitch.value;
+  const bright = els.bright.value;
+  const maxDepth = parseFloat(els.maxDepth.value || ''); // NaN olabilir
+  const w = parseFloat(els.w.value);
+  const h = parseFloat(els.h.value);
+  const bezel = parseFloat(els.bezel.value || '0');
+
+  if(!w || !h){
+    els.box.innerHTML = `<div class="warn">Lütfen genişlik ve yükseklik değerlerini girin.</div>`;
+    return;
+  }
+
+  lastFiltered = data.filter(d =>
+    d["Usage Area"] === usage &&
+    d["Pixel Pitch"] === pitch &&
+    d["Brightness"] === bright &&
+    (isNaN(maxDepth) || Number(d["Depth (cm)"]) <= maxDepth)
+  );
+
+  renderTable(lastFiltered, w, h, bezel);
+  drawPreview(lastFiltered[0], w, h, bezel); // ilk modeli ölçek için kullan
+};
+
+els.btnReset.onclick = () => {
+  ['w','h','maxDepth','bezel'].forEach(k => els[k].value = '');
+  els.box.textContent = 'Hesapladıktan sonra sonuçlar burada görünecek.';
+  const ctx = els.canvas.getContext('2d');
+  ctx.clearRect(0,0,els.canvas.width,els.canvas.height);
+  els.stats.innerHTML = '';
+  els.scaleInfo.textContent = '—';
+};
+
+// 4) Sonuç tablosu
+function renderTable(rows, wallW, wallH, bezel){
+  if(!rows.length){
+    els.box.innerHTML = `<div class="warn">Seçimlere uygun model bulunamadı.</div>`;
+    return;
+  }
+
+  let html = `<table><thead>
+    <tr>
+      <th>Model</th>
+      <th>Panel (cm)</th>
+      <th>Yerleşim</th>
+      <th>Toplam</th>
+      <th>Derinlik</th>
+      <th>Controller</th>
+      <th>Ekran Boyutu</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach(d => {
+    const pw = Number(d["Width (cm)"]);
+    const ph = Number(d["Height (cm)"]);
+    const fit = computeFit(wallW, wallH, pw, ph, bezel);
+    const totalWcm = fit.cols * pw;
+    const totalHcm = fit.rows * ph;
+    const diagonalInch = Math.sqrt(totalWcm**2 + totalHcm**2) / 2.54;
+
+    if(fit.total > 0){
+      const controller = suggestController(fit.cols, pw, d["Pixel Pitch"]);
+      html += `<tr>
+        <td><strong>${escapeHtml(d.Model)}</strong></td>
+        <td>${pw} × ${ph}</td>
+        <td>${fit.cols} × ${fit.rows}</td>
+        <td>${fit.total}</td>
+        <td>${d["Depth (cm)"]} cm</td>
+        <td>${controller}</td>
+        <td>${Math.round(totalWcm)}×${Math.round(totalHcm)} cm (~${Math.round(diagonalInch)}")</td>
+      </tr>`;
     }
+  });
 
-    function updatePitchDropdown() {
-      const selectedUsage = document.getElementById("usageArea").value;
-      const pitches = [...new Set(data.filter(d => d["Usage Area"] === selectedUsage).map(d => d["Pixel Pitch"]))];
-      const pitchSelect = document.getElementById("pixelPitch");
-      pitchSelect.innerHTML = "";
-      pitches.forEach(val => pitchSelect.innerHTML += `<option value="${val}">${val}</option>`);
-      pitchSelect.addEventListener("change", updateBrightnessDropdown);
-      updateBrightnessDropdown();
+  html += `</tbody></table>`;
+  els.box.innerHTML = html;
+}
+
+// 5) Yerleşim hesabı
+function computeFit(wallW, wallH, panelW, panelH, bezel=0){
+  const usableW = Math.max(0, wallW - 2*bezel);
+  const usableH = Math.max(0, wallH - 2*bezel);
+  const cols = Math.floor(usableW / panelW);
+  const rows = Math.floor(usableH / panelH);
+  return { cols, rows, total: cols*rows, usableW, usableH };
+}
+
+// 6) Controller önerisi (örnek iskelet)
+// Not: Gerçek kuralla değiştirilebilir. Burada toplam genişlik (metre) ve pitch’e göre basit eşik kullanıyoruz.
+function suggestController(cols, panelWcm, pitchLabel){
+  const pitchMm = parseFloat(String(pitchLabel).replace(/[^\d.,]/g,'').replace(',','.'));
+  const totalWidthM = (cols * panelWcm) / 100; // m
+  // Tamamen örnek:
+  if(totalWidthM <= 3 && pitchMm <= 2) return 'T3';
+  if(totalWidthM <= 6) return 'T4';
+  if(totalWidthM <= 10) return 'T7';
+  return 'T9';
+}
+
+// 7) Canvas önizleme
+function drawPreview(model, wallW, wallH, bezel=0){
+  const ctx = els.canvas.getContext('2d');
+  ctx.clearRect(0,0,els.canvas.width,els.canvas.height);
+
+  if(!model){ els.scaleInfo.textContent = '—'; els.stats.innerHTML=''; return; }
+
+  const pw = Number(model["Width (cm)"]);
+  const ph = Number(model["Height (cm)"]);
+  const fit = computeFit(wallW, wallH, pw, ph, bezel);
+
+  // Duvarı ve kullanılabilir alanı ölçekleyelim
+  const pad = 20; // canvas iç boşluk
+  const scaleX = (els.canvas.width - pad*2) / wallW;
+  const scaleY = (els.canvas.height - pad*2) / wallH;
+  const scale = Math.min(scaleX, scaleY);
+
+  els.scaleInfo.textContent = `1 px ≈ ${(1/scale).toFixed(1)} cm`;
+
+  // Duvar çerçevesi
+  ctx.strokeStyle = '#9ca3af';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(pad, pad, wallW*scale, wallH*scale);
+
+  // Kullanılabilir alan (bezel sonrası)
+  const ux = pad + bezel*scale;
+  const uy = pad + bezel*scale;
+  const uw = fit.usableW * scale;
+  const uh = fit.usableH * scale;
+  ctx.setLineDash([6,4]);
+  ctx.strokeStyle = '#d1d5db';
+  ctx.strokeRect(ux, uy, uw, uh);
+  ctx.setLineDash([]);
+
+  // Paneller
+  const cW = pw * scale;
+  const cH = ph * scale;
+  ctx.fillStyle = '#e5e7eb';
+  ctx.strokeStyle = '#111';
+  for(let r=0; r<fit.rows; r++){
+    for(let c=0; c<fit.cols; c++){
+      const x = ux + c*cW;
+      const y = uy + r*cH;
+      ctx.fillRect(x, y, cW, cH);
+      ctx.strokeRect(x, y, cW, cH);
     }
+  }
 
-    function updateBrightnessDropdown() {
-      const selectedUsage = document.getElementById("usageArea").value;
-      const selectedPitch = document.getElementById("pixelPitch").value;
-      const brightness = [...new Set(data.filter(d => d["Usage Area"] === selectedUsage && d["Pixel Pitch"] === selectedPitch).map(d => d["Brightness"]))];
-      const brightSelect = document.getElementById("brightness");
-      brightSelect.innerHTML = "";
-      brightness.forEach(val => brightSelect.innerHTML += `<option value="${val}">${val}</option>`);
-    }
+  // İstatistik kutusu
+  const totalWcm = fit.cols * pw;
+  const totalHcm = fit.rows * ph;
+  const diagonalInch = Math.sqrt(totalWcm**2 + totalHcm**2) / 2.54;
 
-    function calculate() {
-      const usage = document.getElementById("usageArea").value;
-      const pitch = document.getElementById("pixelPitch").value;
-      const bright = document.getElementById("brightness").value;
-      const w = parseFloat(document.getElementById("wallWidth").value);
-      const h = parseFloat(document.getElementById("wallHeight").value);
-      const maxDepth = parseFloat(document.getElementById("maxDepth").value);
-
-      const filtered = data.filter(d =>
-        d["Usage Area"] === usage &&
-        d["Pixel Pitch"] === pitch &&
-        d["Brightness"] === bright &&
-        (!maxDepth || d["Depth (cm)"] <= maxDepth)
-      );
-
-      let resultHTML = "<h3>Önerilen Modeller:</h3>";
-
-      if (filtered.length === 0) {
-        resultHTML += "<p>Uygun model bulunamadı.</p>";
-      } else {
-        resultHTML += "<ul>";
-        filtered.forEach(d => {
-          const horiz = Math.floor(w / d["Width (cm)"]);
-          const vert = Math.floor(h / d["Height (cm)"]);
-          const total = horiz * vert;
-          if (total > 0) {
-            resultHTML += `<li><strong>${d.Model}</strong> – ${horiz}x${vert} panel = ${total} adet – Derinlik: ${d["Depth (cm)"]} cm – Controller: ${d.Controller}</li>`;
-          }
-        });
-        resultHTML += "</ul>";
-      }
-
-      document.getElementById("resultBox").innerHTML = resultHTML;
-    }
-  </script>
+  els.stats.innerHTML = `
+    <div><strong>Yerleşim:</strong> ${fit.cols} × ${fit.rows} panel</div>
+    <div><strong>Toplam Modül:</strong> ${fit.total}</div>
+    <div><strong>Toplam Boyut:</strong> ${Math.round(totalWcm)}×${Math.round(totalHcm)} cm</div>
+    <div><strong>Diagonal:</strong> ~${Math.round(diagonalInch)}"</div>
+  `;
+}
+</script>
 </body>
 </html>
